@@ -1,30 +1,25 @@
-# Use an official Python runtime as a parent image
-FROM continuumio/miniconda3:latest
+FROM python:3.10-slim-buster
 
-# Set environment variables
-ENV FLASK_APP=app
-ENV FLASK_RUN_HOST=0.0.0.0
-ENV FLASK_RUN_PORT=8090
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file and install dependencies
-COPY requirements.txt /app/requirements.txt
-RUN ls /app  # Debugging step: Check if requirements.txt is copied correctly
-RUN conda create -n flask-env python=3.10 -y
-SHELL ["conda", "run", "-n", "flask-env", "/bin/bash", "-c"]
-RUN conda install --file /app/requirements.txt && conda clean --all --yes
+RUN pip install --upgrade pip
+#copy to code directory
+COPY . /code 
 
-# Copy the rest of the application code
-COPY . /app
+#set permissions
 
-# Set the working directory
-WORKDIR /app
+RUN chmod +x /code
 
-# Run the training script if needed
-# RUN python flask-train.py
+RUN pip install --no-cache-dir --upgrade -r code/requirements.txt
 
-# Expose port 8080 to the outside world
 EXPOSE 8090
 
-# Command to run the Flask app
-CMD ["conda", "run", "-n", "flask-env", "flask", "run", "--host=0.0.0.0", "--port=8090"]
+WORKDIR /code
+
+ENV PYTHONPATH "${PYTHONPATH}:/code"
+
+CMD pip install -e .
 
